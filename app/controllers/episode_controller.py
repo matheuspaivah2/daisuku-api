@@ -7,6 +7,7 @@ from app.models.anime_model import AnimeModel
 from app.models.comment_model import CommentModel
 from app.models.episode_model import EpisodeModel
 from app.models.watched_episode_model import WatchedEpisodeModel
+from app.models.user_model import UserModel
 from app.services import episode_service as Episode
 from app.services.helpers import encode_json, decode_json, paginate, verify_admin_mod
 from app.services.imgur_service import upload_image
@@ -132,13 +133,16 @@ def watch_episode(id: int):
         session = current_app.db.session
 
         if found_user:
-            watched = WatchedEpisodeModel(user_id=found_user['id'], episode_id=id, watched_at=today)
-
-            session.add(watched)
-        
+            user = UserModel.query.get(found_user['id'])
+            if episode in user.watched:
+                watched = WatchedEpisodeModel.query.filter(WatchedEpisodeModel.user_id==user.id, WatchedEpisodeModel.episode_id==id).first()
+                watched.watched_at = today
+            else:
+                watched = WatchedEpisodeModel(user_id=user.id, episode_id=id, watched_at=today)
+                session.add(watched)
         session.commit()
 
-        return '', HTTPStatus.NO_CONTENT
+        return jsonify({'views': episode.views}), HTTPStatus.OK
     except AttributeError:
         return {'msg': 'Episode not found'}, HTTPStatus.BAD_REQUEST
 
