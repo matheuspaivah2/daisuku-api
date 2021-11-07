@@ -46,7 +46,11 @@ def get_user(id: int):
     found_user = UserModel.query.get(id)
     if not found_user:
         return {'message': 'User not found'}, HTTPStatus.NOT_FOUND
-    return encode_json(found_user)
+    
+    return {
+        'username': found_user.username,
+        'avatarUrl':  found_user.avatar_url
+    }
 
 
 @jwt_required()
